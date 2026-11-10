@@ -1,9 +1,13 @@
 import fastapi
 
+from app.core import config
+
+
 app = fastapi.FastAPI(
-    title="Saleor FastAPI Backend",
-    description="A learning-oriented e-commerce backend API.",
-    version="0.1.0",
+    title=config.settings.app_name,
+    version=config.settings.app_version,
+    debug=config.settings.debug,
+    description="This is the Saleor FastAPI Backend API.",
 )
 
 
