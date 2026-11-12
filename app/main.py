@@ -2,7 +2,6 @@ import logging
 
 import fastapi
 import fastapi.exceptions
-import starlette.exceptions
 
 import app.api.v1.router
 import app.core.config
@@ -23,28 +22,8 @@ application = fastapi.FastAPI(
     description="This is the Saleor FastAPI Backend API.",
 )
 
-# App 异常处理器
-application.add_exception_handler(
-    app.core.exceptions.AppException,
-    app.core.exception_handlers.app_exception_handler,
-)
-
-# HTTP 异常处理器
-application.add_exception_handler(
-    fastapi.HTTPException,
-    app.core.exception_handlers.http_exception_handler,
-)
-
-# 验证异常处理器
-application.add_exception_handler(
-    fastapi.exceptions.RequestValidationError,
-    app.core.exception_handlers.validation_exception_handler,
-)
-
-# 未预期异常处理器
-application.add_exception_handler(
-    Exception,
-    app.core.exception_handlers.unexpected_exception_handler,
+app.core.exception_handlers.register_exception_handlers(
+    application,
 )
 
 application.include_router(

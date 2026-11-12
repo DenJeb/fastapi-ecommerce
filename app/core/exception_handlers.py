@@ -1,8 +1,10 @@
 import logging
 
 import fastapi
+import fastapi.encoders
 import fastapi.exceptions
 import fastapi.responses
+import starlette.exceptions
 
 import app.core.exceptions
 
@@ -26,7 +28,7 @@ async def app_exception_handler(
 
 async def http_exception_handler(
     request: fastapi.Request,
-    exc: fastapi.HTTPException,
+    exc: starlette.exceptions.HTTPException,
 ):
     """处理HTTP异常的异常处理器"""
     return fastapi.responses.JSONResponse(
@@ -50,7 +52,7 @@ async def validation_exception_handler(
         content={
             "code": "VALIDATION_ERROR",
             "message": "Request validation failed.",
-            "details": exc.errors(),
+            "details": fastapi.encoders.jsonable_encoder(exc.errors()),
         },
     )
 
@@ -73,4 +75,33 @@ async def unexpected_exception_handler(
             "message": "An unexpected error occurred.",
             "details": None,
         },
+    )
+
+
+def register_exception_handlers(
+    application: fastapi.FastAPI
+) -> None:
+    """注册异常处理器"""
+    # App 异常处理器
+    application.add_exception_handler(
+        app.core.exceptions.AppException,
+        app_exception_handler,
+    )
+
+    # HTTP 异常处理器
+    application.add_exception_handler(
+        starlette.exceptions.HTTPException,
+        http_exception_handler,
+    )
+
+    # 验证异常处理器
+    application.add_exception_handler(
+        fastapi.exceptions.RequestValidationError,
+        validation_exception_handler,
+    )
+
+    # 未预期异常处理器
+    application.add_exception_handler(
+        Exception,
+        unexpected_exception_handler,
     )

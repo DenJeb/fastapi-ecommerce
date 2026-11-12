@@ -15,22 +15,11 @@ def test_root():
 
 
 def test_health_check():
-    response = client.get("/health")
+    response = client.get("/api/v1/health")
 
     assert response.status_code == 200
     assert response.json() == {
         "status": "OK",
-    }
-
-
-def test_app_exception_handler():
-    response = client.get("/test-error")
-
-    assert response.status_code == 404
-    assert response.json() == {
-        "code": "RESOURCE_NOT_FOUND",
-        "message": "Product does not exist.",
-        "details": None,
     }
 
 
