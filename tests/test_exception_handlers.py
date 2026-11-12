@@ -5,6 +5,7 @@ import app.core.exception_handlers
 import app.core.exceptions
 
 test_application = fastapi.FastAPI()
+test_application.__test__ = False
 
 app.core.exception_handlers.register_exception_handlers(
     test_application,
