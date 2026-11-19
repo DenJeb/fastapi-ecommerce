@@ -11,18 +11,46 @@ import app.core.exceptions
 logger = logging.getLogger(__name__)
 
 
+def _error_response(
+    request: fastapi.Request,
+    status_code: int,
+    code: str,
+    message: str,
+    details: dict | list | None = None,
+    headers: dict[str, str] | None = None,
+) -> fastapi.responses.JSONResponse:
+    """按 05-api-design.md 的统一结构返回错误"""
+    request_id = getattr(request.state, "request_id", None)
+
+    response_headers = dict(headers) if headers else {}
+    if request_id:
+        response_headers.setdefault("X-Request-ID", request_id)
+
+    return fastapi.responses.JSONResponse(
+        status_code=status_code,
+        content={
+            "error": {
+                "code": code,
+                "message": message,
+                "details": details,
+                "request_id": request_id,
+            }
+        },
+        headers=response_headers,
+    )
+
+
 async def app_exception_handler(
     request: fastapi.Request,
     exc: app.core.exceptions.AppException,
 ):
     """处理自定义应用程序异常的异常处理器"""
-    return fastapi.responses.JSONResponse(
+    return _error_response(
+        request=request,
         status_code=exc.status_code,
-        content={
-            "code": exc.code,
-            "message": exc.message,
-            "details": exc.details,
-        },
+        code=exc.code,
+        message=exc.message,
+        details=exc.details,
     )
 
 
@@ -31,13 +59,11 @@ async def http_exception_handler(
     exc: starlette.exceptions.HTTPException,
 ):
     """处理HTTP异常的异常处理器"""
-    return fastapi.responses.JSONResponse(
+    return _error_response(
+        request=request,
         status_code=exc.status_code,
-        content={
-            "code": "HTTP_ERROR",
-            "message": str(exc.detail),
-            "details": None,
-        },
+        code="HTTP_ERROR",
+        message=str(exc.detail),
         headers=exc.headers,
     )
 
@@ -47,13 +73,12 @@ async def validation_exception_handler(
     exc: fastapi.exceptions.RequestValidationError,
 ):
     """处理验证异常的异常处理器"""
-    return fastapi.responses.JSONResponse(
+    return _error_response(
+        request=request,
         status_code=422,
-        content={
-            "code": "VALIDATION_ERROR",
-            "message": "Request validation failed.",
-            "details": fastapi.encoders.jsonable_encoder(exc.errors()),
-        },
+        code="VALIDATION_ERROR",
+        message="Request validation failed.",
+        details=fastapi.encoders.jsonable_encoder(exc.errors()),
     )
 
 
@@ -68,13 +93,11 @@ async def unexpected_exception_handler(
         request.url.path,
     )
 
-    return fastapi.responses.JSONResponse(
+    return _error_response(
+        request=request,
         status_code=500,
-        content={
-            "code": "INTERNAL_SERVER_ERROR",
-            "message": "An unexpected error occurred.",
-            "details": None,
-        },
+        code="INTERNAL_SERVER_ERROR",
+        message="An unexpected error occurred.",
     )
 
 

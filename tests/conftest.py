@@ -1,0 +1,78 @@
+import asyncio
+import os
+
+# 必须在导入 app 之前设置
+# settings 是模块级单例，导入时读取环境变量
+os.environ["ENVIRONMENT"] = "test"
+os.environ["DEBUG"] = "false"
+os.environ["DB_NAME"] = "saleor_backend_test"
+
+import pytest
+import sqlalchemy
+import sqlalchemy.ext.asyncio
+import sqlalchemy.pool
+
+import app.db.session
+import app.models.migration_test
+
+TEST_DB_NAME = "saleor_backend_test"
+
+# 只允许对 _test 结尾的数据库执行 DROP/CREATE
+if app.db.session.database_url.database != TEST_DB_NAME:
+    raise RuntimeError(
+        f"Refusing to run tests against database: "
+        f"{app.db.session.database_url.database!r}"
+    )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def prepare_test_database():
+    """整个测试会话开始前重建测试库并建表"""
+
+    async def reset_database():
+        # 显式重建一个不带 database 的连接串，先连到 MySQL 服务器本身。
+        admin_url = sqlalchemy.URL.create(
+            drivername=app.db.session.database_url.drivername,
+            username=app.db.session.database_url.username,
+            password=app.db.session.database_url.password,
+            host=app.db.session.database_url.host,
+            port=app.db.session.database_url.port,
+        )
+        
+        admin_engine = sqlalchemy.ext.asyncio.create_async_engine(
+            admin_url,
+            poolclass=sqlalchemy.pool.NullPool,
+            isolation_level="AUTOCOMMIT", 
+        )
+
+        try:
+            async with admin_engine.connect() as connection:
+                await connection.execute(
+                    sqlalchemy.text(f"DROP DATABASE IF EXISTS `{TEST_DB_NAME}`")
+                )
+                await connection.execute(
+                    sqlalchemy.text(
+                        f"CREATE DATABASE `{TEST_DB_NAME}` "
+                        "CHARACTER SET utf8mb4"
+                    )
+                )
+        finally:
+            await admin_engine.dispose()
+
+    async def create_schema():
+        schema_engine = sqlalchemy.ext.asyncio.create_async_engine(
+            app.db.session.database_url,
+            poolclass=sqlalchemy.pool.NullPool,
+        )
+        try:
+            async with schema_engine.begin() as connection:
+                await connection.run_sync(
+                    app.db.session.Base.metadata.create_all
+                )
+        finally:
+            await schema_engine.dispose()
+
+    asyncio.run(reset_database())
+    asyncio.run(create_schema())
+
+    yield
