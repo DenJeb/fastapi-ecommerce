@@ -6,6 +6,7 @@ import os
 os.environ["ENVIRONMENT"] = "test"
 os.environ["DEBUG"] = "false"
 os.environ["DB_NAME"] = "saleor_backend_test"
+os.environ["JWT_SECRET_KEY"] = "test-only-jwt-secret"
 
 import pytest
 import sqlalchemy
@@ -76,3 +77,34 @@ def prepare_test_database():
     asyncio.run(create_schema())
 
     yield
+
+
+@pytest.fixture(autouse=True)
+def clean_database():
+    """每个测试结束后清空业务表，避免测试之间共享数据"""
+    yield
+
+    async def truncate_tables():
+        engine = sqlalchemy.ext.asyncio.create_async_engine(
+            app.db.session.database_url,
+            poolclass=sqlalchemy.pool.NullPool,
+            isolation_level="AUTOCOMMIT",
+        )
+        try:
+            async with engine.connect() as connection:
+                await connection.execute(
+                    sqlalchemy.text("SET FOREIGN_KEY_CHECKS=0")
+                )
+                for table in reversed(
+                    app.db.session.Base.metadata.sorted_tables
+                ):
+                    await connection.execute(
+                        sqlalchemy.text(f"TRUNCATE TABLE `{table.name}`")
+                    )
+                await connection.execute(
+                    sqlalchemy.text("SET FOREIGN_KEY_CHECKS=1")
+                )
+        finally:
+            await engine.dispose()
+
+    asyncio.run(truncate_tables())
