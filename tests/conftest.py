@@ -13,7 +13,7 @@ import sqlalchemy.ext.asyncio
 import sqlalchemy.pool
 
 import app.db.session
-import app.models.migration_test
+import app.models
 
 TEST_DB_NAME = "saleor_backend_test"
 

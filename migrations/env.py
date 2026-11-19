@@ -4,7 +4,7 @@ import logging.config
 import alembic.context
 
 import app.db.session
-import app.models.migration_test
+import app.models
 
 
 # 获取 Alembic 配置对象

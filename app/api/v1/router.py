@@ -1,9 +1,9 @@
 import fastapi
 
-import app.api.v1.endpoints.health
+import app.modules.health.router
 
 api_router = fastapi.APIRouter()
 
 api_router.include_router(
-    app.api.v1.endpoints.health.router,
+    app.modules.health.router.router,
 )
