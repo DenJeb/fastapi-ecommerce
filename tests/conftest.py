@@ -15,6 +15,7 @@ import sqlalchemy.pool
 
 import app.db.session
 import app.models
+import app.modules.auth.seed
 
 TEST_DB_NAME = "saleor_backend_test"
 
@@ -70,6 +71,14 @@ def prepare_test_database():
                 await connection.run_sync(
                     app.db.session.Base.metadata.create_all
                 )
+            # 默认角色是参考数据
+            factory = sqlalchemy.ext.asyncio.async_sessionmaker(
+                schema_engine,
+                expire_on_commit=False,
+            )
+            async with factory() as session:
+                await app.modules.auth.seed.ensure_default_roles(session)
+                await session.commit()
         finally:
             await schema_engine.dispose()
 
@@ -98,6 +107,8 @@ def clean_database():
                 for table in reversed(
                     app.db.session.Base.metadata.sorted_tables
                 ):
+                    if table.name == "roles":
+                        continue
                     await connection.execute(
                         sqlalchemy.text(f"TRUNCATE TABLE `{table.name}`")
                     )
