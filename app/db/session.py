@@ -1,5 +1,6 @@
 import sqlalchemy
 import sqlalchemy.ext.asyncio
+import sqlalchemy.pool
 
 from app.core.config import settings
 
@@ -15,10 +16,17 @@ database_url = sqlalchemy.URL.create(
 )
 
 # 创建异步引擎
+engine_options: dict = {
+    "echo":settings.debug,
+    "pool_pre_ping": True,
+}
+
+if settings.environment == "test":
+    engine_options["poolclass"] = sqlalchemy.pool.NullPool
+
 engine = sqlalchemy.ext.asyncio.create_async_engine(
     database_url,
-    echo=settings.debug,
-    pool_pre_ping=True,
+    **engine_options,
 )
 
 # 创建异步 session 

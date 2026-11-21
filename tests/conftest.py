@@ -8,12 +8,14 @@ os.environ["DEBUG"] = "false"
 os.environ["DB_NAME"] = "saleor_backend_test"
 os.environ["JWT_SECRET_KEY"] = "test-only-jwt-secret-key-with-32-bytes"
 
+import fastapi.testclient
 import pytest
 import sqlalchemy
 import sqlalchemy.ext.asyncio
 import sqlalchemy.pool
 
 import app.db.session
+import app.main
 import app.models
 import app.modules.auth.seed
 
@@ -119,3 +121,10 @@ def clean_database():
             await engine.dispose()
 
     asyncio.run(truncate_tables())
+
+
+@pytest.fixture
+def client():
+    # with 会在用例结束时关闭 TestClient 的事件循环
+    with fastapi.testclient.TestClient(app.main.application) as test_client:
+        yield test_client

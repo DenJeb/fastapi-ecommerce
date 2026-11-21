@@ -58,13 +58,19 @@ class AuthService:
         return user
 
     async def authenticate(self, identifier: str, password: str) -> auth_models.User:
-        user = await self.repository.get_by_indentifier(identifier.strip())
+        user = await self.repository.get_by_identifier(identifier.strip())
 
         # 用户不存在和密码错误返回同一个错误
-        if user is None or app.core.security.verify_password(
+        if user is None or not app.core.security.verify_password(
             password, user.password_hash
         ):
             raise app.core.exceptions.UnauthorizedException(
+                message="Invalid email/username or password.",
+                code="INVALID_CREDENTIALS",
+            )
+
+        if not user.is_active:
+            raise app.core.exceptions.ForbiddenException(
                 message="Account is disabled",
                 code="ACCOUNT_DISABLED",
             )
@@ -93,5 +99,5 @@ class AuthService:
             )
         return user
 
-    def has_role(user: auth_models.User, role_name: str) -> bool:
-        return any(role.name == role_name for role in user.roles)
+def has_role(user: auth_models.User, role_name: str) -> bool:
+    return any(role.name == role_name for role in user.roles)

@@ -29,7 +29,7 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_indentifier(self, identifier: str) -> auth_models.User | None:
+    async def get_by_identifier(self, identifier: str) -> auth_models.User | None:
         result = await self.session.execute(
             sqlalchemy.select(auth_models.User).where(
                 sqlalchemy.or_(
