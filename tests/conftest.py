@@ -6,7 +6,7 @@ import os
 os.environ["ENVIRONMENT"] = "test"
 os.environ["DEBUG"] = "false"
 os.environ["DB_NAME"] = "saleor_backend_test"
-os.environ["JWT_SECRET_KEY"] = "test-only-jwt-secret"
+os.environ["JWT_SECRET_KEY"] = "test-only-jwt-secret-key-with-32-bytes"
 
 import pytest
 import sqlalchemy
