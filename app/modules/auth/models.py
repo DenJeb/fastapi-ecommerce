@@ -3,13 +3,8 @@ import datetime
 import sqlalchemy
 import sqlalchemy.orm
 
+import app.core.time
 import app.db.session
-
-
-def utc_now() -> datetime.datetime:
-    """MySQL DATETIME 不保存时区，统一存 UTC 的 naive 时区"""
-    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-
 
 user_roles = sqlalchemy.Table(
     "user_roles",
@@ -58,13 +53,13 @@ class User(app.db.session.Base):
     )
     created_at: sqlalchemy.orm.Mapped[datetime.datetime] = sqlalchemy.orm.mapped_column(
         sqlalchemy.DateTime,
-        default=utc_now,
+        default=app.core.time.utc_now,
         nullable=False,
     )
     updated_at: sqlalchemy.orm.Mapped[datetime.datetime] = sqlalchemy.orm.mapped_column(
         sqlalchemy.DateTime,
-        default=utc_now,
-        onupdate=utc_now,
+        default=app.core.time.utc_now,
+        onupdate=app.core.time.utc_now,
         nullable=False,
     )
 
