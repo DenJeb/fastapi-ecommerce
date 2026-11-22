@@ -17,6 +17,7 @@ import sqlalchemy.pool
 import app.db.session
 import app.main
 import app.models
+import app.modules.auth.models as auth_models
 import app.modules.auth.seed
 
 TEST_DB_NAME = "saleor_backend_test"
@@ -128,3 +129,72 @@ def client():
     # with 会在用例结束时关闭 TestClient 的事件循环
     with fastapi.testclient.TestClient(app.main.application) as test_client:
         yield test_client
+
+
+def _run_db(action) -> None:
+    async def main():
+        engine = sqlalchemy.ext.asyncio.create_async_engine(
+            app.db.session.database_url,
+            poolclass=sqlalchemy.pool.NullPool,
+        )
+        factory = sqlalchemy.ext.asyncio.async_sessionmaker(
+            engine,
+            expire_on_commit=False,
+        )
+        try:
+            async with factory() as session:
+                await action(session)
+        finally:
+            await engine.dispose()
+
+    asyncio.run(main())
+
+
+def _grant_admin(email: str) -> None:
+    async def action(session):
+        user = await session.scalar(
+            sqlalchemy.select(auth_models.User).where(
+                auth_models.User.email == email
+            )
+        )
+        role = await session.scalar(
+            sqlalchemy.select(auth_models.Role).where(
+                auth_models.Role.name == "admin"
+            )
+        )
+        assert user is not None
+        assert role is not None
+        user.roles.append(role)
+        await session.commit()
+
+    _run_db(action)
+
+
+@pytest.fixture
+def admin_headers(client):
+    email = "admin@example.com"
+    password = "password123"
+
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "username": "admin_user",
+            "password": password,
+        },
+    )
+    assert response.status_code == 201
+
+    _grant_admin(email)
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={
+            "identifier": email,
+            "password": password,
+        },
+    )
+    assert response.status_code == 200
+
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
