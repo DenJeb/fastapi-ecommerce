@@ -73,3 +73,14 @@ class ForbiddenException(AppException):
             message=message,
             status_code=403,
         )
+
+
+class BadRequestException(AppException):
+    """请求本身不合法"""
+
+    def __init__(
+        self,
+        message: str = "Bad request.",
+        code: str = "BAD_REQUEST"
+    ):
+        super().__init__(code=code, message=message, status_code=400)
