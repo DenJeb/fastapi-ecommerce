@@ -66,6 +66,10 @@ class Inventory(app.db.session.Base):
         nullable=False,
     )
 
+    @property
+    def available(self) -> int:
+        return self.on_hand - self.reserved
+
 
 class InventoryMovement(app.db.session.Base):
     __tablename__ = "inventory_movements"

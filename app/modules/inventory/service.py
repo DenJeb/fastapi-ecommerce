@@ -218,3 +218,26 @@ class InventoryService:
                 "Quantity must be positive.",
                 code="INVALID_QUANTITY",
             )
+
+    async def list_inventory(
+        self,
+        page: int,
+        page_size: int,
+        variant_id: int | None = None,
+    ) -> tuple[list[inventory_models.Inventory], int]:
+        return await self.repository.list_inventory(page, page_size, variant_id)
+
+    async def list_movements(
+        self,
+        page: int,
+        page_size: int,
+        variant_id: int | None = None,
+    ) -> tuple[list[inventory_models.InventoryMovement], int]:
+        inventory_id = None
+        if variant_id is not None:
+            inventory = await self.repository.get_by_variant_id(variant_id)
+            if inventory is None:
+                return [], 0
+            inventory_id = inventory.id
+            
+        return await self.repository.list_movements(page, page_size, inventory_id)
