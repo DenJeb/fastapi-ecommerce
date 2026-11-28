@@ -1,6 +1,7 @@
 import fastapi
 
 import app.modules.auth.router
+import app.modules.cart.router
 import app.modules.catalog.router
 import app.modules.health.router
 import app.modules.inventory.router
@@ -10,6 +11,9 @@ api_router = fastapi.APIRouter()
 
 api_router.include_router(
     app.modules.auth.router.router,
+)
+api_router.include_router(
+    app.modules.cart.router.router,
 )
 api_router.include_router(
     app.modules.catalog.router.router,
