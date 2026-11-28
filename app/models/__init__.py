@@ -7,6 +7,7 @@ from app.modules.auth.models import Role, User, user_roles
 from app.modules.cart.models import Cart, CartItem
 from app.modules.catalog.models import Category, Product, ProductVariant
 from app.modules.inventory.models import Inventory, InventoryMovement, MovementType
+from app.modules.orders.models import Order, OrderEvent, OrderItem, OrderStatus
 
 __all__ = [
     "Cart",
@@ -15,7 +16,11 @@ __all__ = [
     "Inventory",
     "InventoryMovement"
     "MigrationTest",
-    "MovementType"
+    "MovementType",
+    "Order",
+    "OrderEvent",
+    "OrderItem",
+    "OrderStatus",
     "Product",
     "ProductVariant",
     "Role",
