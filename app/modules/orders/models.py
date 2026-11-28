@@ -193,6 +193,18 @@ class OrderItem(app.db.session.Base):
         back_populates="items",
     )
 
+    @property
+    def product_name(self) -> str:
+        return self.product_name_snapshot
+
+    @property
+    def sku(self) -> str:
+        return self.sku_snapshot
+
+    @property
+    def variant_name(self) -> str:
+        return self.variant_name_snapshot
+
 
 class OrderEvent(app.db.session.Base):
     __tablename__ = "order_events"

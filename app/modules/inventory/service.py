@@ -77,6 +77,7 @@ class InventoryService:
         variant_id: int,
         quantity: int,
         order_id: int | None = None,
+        commit: bool = True,
     ) -> inventory_models.Inventory:
         self._validate_quantity(quantity)
         inventory = await self.repository.get_for_update(variant_id)
@@ -98,7 +99,12 @@ class InventoryService:
             order_id=order_id,
             reason="Order reservation",
         )
-        await self.session.commit()
+
+        if commit:
+            await self.session.commit()
+        else:
+            await self.session.flush()
+        
         return inventory
 
     async def release(
